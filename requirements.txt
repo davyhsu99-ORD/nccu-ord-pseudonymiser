@@ -1,0 +1,4 @@
+pandas
+openpyxl
+xlrd
+tkinterdnd2   # 選用：讓使用者可以把檔案直接拖進視窗，未安裝不影響功能

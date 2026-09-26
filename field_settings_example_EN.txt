@@ -1,0 +1,81 @@
+﻿# ==============================================================
+#  Column settings — EXAMPLE (English)
+#
+#  HOW TO USE
+#    1. Copy this file and rename the copy to exactly:
+#           欄位設定.txt
+#       Keep that Chinese filename — the tool only reads that name.
+#       Put it in the same folder as anonymize.py.
+#    2. Edit the lists below, save as UTF-8.
+#
+#  IMPORTANT — the two section tags below must stay in Chinese.
+#    [姓名欄]  = "name columns"      → values are replaced with a code
+#    [清空欄]  = "clear columns"     → the whole column is emptied
+#  Everything else in this file (comments, column names) can be in any
+#  language. If you write [Name columns] instead, the tool will report
+#  that the section tag was not recognised and the names below it will
+#  have no effect.
+#
+#  MATCHING RULES
+#    · One column name per line; it must match the Excel header exactly,
+#      except that case and spacing are ignored.
+#      "Principal Investigator" also matches "PRINCIPAL  INVESTIGATOR".
+#    · A trailing colon in the header is ignored ("Applicant:" matches).
+#    · Full-width characters are folded to half-width.
+#    · Anything after # on a line is a comment.
+#    · These lists ADD to the built-in Chinese list; they do not replace it,
+#      so a mixed Chinese/English workbook works without extra effort.
+#
+#  WHAT THE TOOL STILL WILL NOT DO
+#    Adding English column names makes the tool find the right columns.
+#    It does NOT make the name-shape detection work for non-Chinese names:
+#    the "a name appearing inside a sentence" logic is built around
+#    2–3 character Chinese names and does not apply to Western names.
+#    For English rosters, rely on the column lists below rather than on
+#    the in-sentence detection, and always use "① Preview" before running.
+# ==============================================================
+
+[姓名欄]
+# Columns whose values are people's names → replaced with T-XXXXXXXXXX
+
+Name
+Full Name
+English Name
+Principal Investigator
+Co-Investigator
+Applicant
+Recipient
+Supervisor
+Advisor
+Instructor
+Contact Person
+Staff Name
+Student Name
+Reviewer
+Committee Member
+Author
+Corresponding Author
+
+
+[清空欄]
+# Columns that should be emptied completely — identifiers and contact
+# details that are of no analytical use but are highly identifying.
+
+Employee ID
+Staff ID
+Student ID
+ID Number
+National ID
+Passport Number
+Email
+E-mail
+Email Address
+Phone
+Mobile
+Telephone
+Extension
+Address
+Home Address
+Bank Account
+Date of Birth
+ORCID

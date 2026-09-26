@@ -1,0 +1,14 @@
+# 這個專案的 .bat 必須是 CRLF、.txt 帶 BOM，任何自動轉換都可能讓
+# Windows 的命令提示字元把中文顯示成亂碼。一律關閉換行正規化，
+# 檔案以原始位元組進出版控。
+* -text
+
+# 明確標記二進位檔，避免被當成文字做 diff
+*.xls  binary
+*.xlsx binary
+*.ico  binary
+*.png  binary
+*.zip  binary
+
+# GitHub 語言統計：不要把示範資料與報告算成主要語言
+docs/** linguist-documentation

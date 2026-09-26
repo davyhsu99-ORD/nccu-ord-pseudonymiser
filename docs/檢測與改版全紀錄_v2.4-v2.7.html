@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<!-- saved from url=(0053)https://nccu-pseudonymizer-report.vercel.app/#summary -->
+<html lang="zh-Hant"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style data-merge-styles="true"></style>
+<style data-merge-styles="true"></style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#fafafa">
+<title>假名化工具 v2.4 → v2.6　檢測與改版全紀錄｜政大研發處</title>
+<meta name="description" content="政大研發處「上傳前假名化工具」從 v2.4 檢測、17 條問題、五輪修正到 v2.6 定版，以及後續 v2.7 新增解除安裝功能的完整過程：測試方法、量化對照、126 條改動與已知限制。">
+<meta name="robots" content="noindex, nofollow">
+<style>
+:root{
+  --bg:#fafafa; --card:#fff; --ink:#18181b; --muted:#52525b; --faint:#71717a;
+  --line:#e4e4e7; --line-strong:#d4d4d8;
+  --accent:#1d4ed8; --accent-ink:#1e40af; --accent-soft:#eff6ff; --accent-line:#bfdbfe;
+  --old:#a8a29e; --new:#1d4ed8;
+  --danger:#b91c1c; --danger-soft:#fef2f2; --danger-line:#fecaca;
+  --warn:#b45309; --warn-soft:#fffbeb; --warn-line:#fde68a;
+  --ok:#15803d; --ok-soft:#f0fdf4; --ok-line:#bbf7d0;
+  --radius:10px; --maxw:900px;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI","Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+  font-size:clamp(15px,1.5vw,16.2px);line-height:1.82;-webkit-font-smoothing:antialiased}
+svg{max-width:100%}
+a{color:var(--accent-ink)}
+code{font-family:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace;font-size:.9em;
+     background:#f4f4f5;border:1px solid var(--line);border-radius:4px;padding:.06em .34em}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:20px}
+
+/* 頁首 */
+header.top{background:var(--card);border-bottom:1px solid var(--line)}
+.top .wrap{padding-block:30px 24px}
+.eyebrow{font-size:.8rem;letter-spacing:.14em;color:var(--accent);font-weight:700;margin:0 0 8px}
+h1{font-size:clamp(1.45rem,4.2vw,2.1rem);line-height:1.34;margin:0 0 12px;letter-spacing:-.015em}
+.lede{margin:0;color:var(--muted);max-width:46em}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.meta span{font-size:.8rem;color:var(--faint);border:1px solid var(--line);border-radius:999px;padding:3px 11px}
+
+/* 導覽 */
+nav.toc{position:sticky;top:0;z-index:30;background:rgba(250,250,250,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+nav.toc ul{display:flex;gap:2px;list-style:none;margin:0 auto;padding:8px 14px;overflow-x:auto;max-width:var(--maxw)}
+nav.toc a{display:block;white-space:nowrap;font-size:.85rem;text-decoration:none;color:var(--muted);
+          padding:7px 11px;border-radius:7px;min-height:38px;line-height:24px}
+nav.toc a:hover{background:#f4f4f5;color:var(--ink)}
+nav.toc a.on{background:var(--accent-soft);color:var(--accent-ink);font-weight:700}
+
+main{padding-block:6px 60px}
+section{padding-block:40px;border-bottom:1px solid var(--line);scroll-margin-top:60px}
+section:last-of-type{border-bottom:0}
+h2{font-size:clamp(1.16rem,3vw,1.42rem);margin:0 0 6px;letter-spacing:-.01em;display:flex;gap:11px;align-items:center}
+h2 .n{flex:none;width:30px;height:30px;border-radius:8px;background:var(--accent);color:#fff;font-size:.86rem;
+      display:grid;place-items:center;font-weight:700;font-variant-numeric:tabular-nums}
+.sub{color:var(--muted);margin:0 0 22px;padding-left:41px}
+@media (max-width:560px){.sub{padding-left:0}}
+h3{font-size:1.03rem;margin:30px 0 8px}
+h4{font-size:.95rem;margin:18px 0 6px;color:var(--accent-ink)}
+p{margin:.55em 0}
+ul.plain{padding-left:1.25em;margin:.5em 0}
+ul.plain li{margin:.32em 0}
+
+/* 摘要數字 */
+.kpis{display:grid;gap:12px;margin:22px 0}
+@media (min-width:600px){.kpis{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:860px){.kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+.kpi .v{font-size:clamp(1.35rem,4vw,1.6rem);font-weight:800;letter-spacing:-.02em;line-height:1.25;
+        font-variant-numeric:tabular-nums;color:var(--accent-ink)}
+.kpi .k{font-size:.82rem;color:var(--faint);margin-top:3px}
+.kpi.flat .v{color:var(--ink)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:16px 0}
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 var(--radius) var(--radius) 0;padding:14px 18px;margin:16px 0}
+.alert{border:1px solid var(--danger-line);background:var(--danger-soft);border-radius:var(--radius);padding:16px 18px;margin:18px 0}
+.caution{border:1px solid var(--warn-line);background:var(--warn-soft);border-radius:var(--radius);padding:16px 18px;margin:18px 0}
+.good{border:1px solid var(--ok-line);background:var(--ok-soft);border-radius:var(--radius);padding:16px 18px;margin:18px 0}
+.hd{display:flex;gap:9px;align-items:center;font-weight:700;margin-bottom:6px}
+.alert .hd{color:var(--danger)} .caution .hd{color:var(--warn)} .good .hd{color:var(--ok)}
+.card p:last-child,.note p:last-child,.alert p:last-child,.caution p:last-child,.good p:last-child{margin-bottom:0}
+
+/* 表格 */
+.tbl-wrap{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:540px}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:#f4f4f5;font-weight:700;font-size:.84rem;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.up{color:var(--ok);font-weight:700}
+.down{color:var(--danger);font-weight:700}
+.tag{display:inline-block;font-size:.74rem;font-weight:700;border-radius:4px;padding:1px 7px;white-space:nowrap}
+.tag.hi{background:var(--danger-soft);color:var(--danger);border:1px solid var(--danger-line)}
+.tag.mid{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn-line)}
+.tag.low{background:#f4f4f5;color:var(--muted);border:1px solid var(--line)}
+
+/* 長條比較 */
+.bars{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin:18px 0}
+.bar-row{margin:0 0 18px}
+.bar-row:last-child{margin-bottom:0}
+.bar-label{font-size:.9rem;font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.bar-label .delta{font-weight:800;font-size:.85rem}
+.bar{display:flex;align-items:center;gap:10px;margin:5px 0;font-size:.82rem}
+.bar .who{width:42px;flex:none;color:var(--faint);font-variant-numeric:tabular-nums}
+.bar .track{flex:1;background:#f4f4f5;border-radius:4px;height:19px;overflow:hidden}
+.bar .fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.2,.7,.3,1)}
+.bar.old .fill{background:var(--old)}
+.bar.new .fill{background:var(--new)}
+.bar .val{width:80px;flex:none;text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+@media (max-width:480px){.bar .val{width:66px;font-size:.78rem}}
+
+/* 時間軸 */
+.timeline{position:relative;margin:22px 0;padding-left:26px}
+.timeline::before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:1px;background:var(--line-strong)}
+.tl{position:relative;margin-bottom:22px}
+.tl:last-child{margin-bottom:0}
+.tl::before{content:"";position:absolute;left:-23px;top:9px;width:9px;height:9px;border-radius:50%;
+            background:var(--card);border:2px solid var(--accent)}
+.tl.done::before{background:var(--accent)}
+.tl .when{font-size:.78rem;color:var(--faint);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.tl .what{font-weight:700;margin:1px 0 3px}
+.tl p{margin:.2em 0;font-size:.93rem;color:var(--muted)}
+
+/* 方法卡 */
+.methods{display:grid;gap:12px;margin:18px 0}
+@media (min-width:680px){.methods{grid-template-columns:1fr 1fr}}
+.m{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px}
+.m .mt{display:flex;gap:9px;align-items:baseline;font-weight:700;font-size:.97rem;margin-bottom:4px}
+.m .mt i{font-style:normal;color:var(--accent);font-variant-numeric:tabular-nums;font-size:.82rem;
+         border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:5px;padding:0 6px;flex:none}
+.m p{font-size:.9rem;color:var(--muted);margin:.25em 0}
+.m .why{font-size:.86rem;color:var(--faint);border-top:1px dashed var(--line);margin-top:9px;padding-top:8px}
+
+/* 原則 */
+.pr{display:grid;gap:12px;margin:18px 0}
+@media (min-width:680px){.pr{grid-template-columns:1fr 1fr}}
+.p1{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 var(--radius) var(--radius) 0;padding:15px 17px}
+.p1 b{display:block;font-size:1rem;margin-bottom:3px}
+.p1 p{font-size:.9rem;color:var(--muted);margin:.2em 0}
+
+/* 摺疊 */
+details{border:1px solid var(--line);border-radius:var(--radius);background:var(--card);margin:12px 0;overflow:hidden}
+summary{cursor:pointer;padding:13px 17px;font-weight:600;list-style:none;display:flex;align-items:center;gap:10px;min-height:44px}
+summary::-webkit-details-marker{display:none}
+summary .chev{margin-left:auto;color:var(--faint);transition:transform .16s;width:18px;height:18px;flex:none;
+              stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+details[open] summary .chev{transform:rotate(90deg)}
+details[open] summary{border-bottom:1px solid var(--line)}
+.det-body{padding:4px 17px 17px}
+.det-body > :first-child{margin-top:12px}
+
+/* 六項建議 */
+.rec{counter-reset:r;list-style:none;padding:0;margin:18px 0}
+.rec li{counter-increment:r;position:relative;background:var(--card);border:1px solid var(--line);
+        border-radius:var(--radius);padding:14px 17px 14px 52px;margin-bottom:10px}
+.rec li::before{content:counter(r);position:absolute;left:15px;top:14px;width:24px;height:24px;border-radius:7px;
+        background:var(--accent-soft);border:1px solid var(--accent-line);color:var(--accent-ink);
+        font-weight:800;font-size:.82rem;display:grid;place-items:center}
+.rec b{font-size:.98rem}
+.rec p{font-size:.9rem;color:var(--muted);margin:.25em 0 0}
+
+footer{border-top:1px solid var(--line);background:var(--card);padding-block:26px 40px;color:var(--faint);font-size:.87rem}
+footer p{margin:.3em 0}
+.totop{display:inline-flex;align-items:center;gap:6px;margin-top:14px;color:var(--accent-ink);text-decoration:none;font-weight:600}
+.i{width:1.12em;height:1.12em;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;
+   stroke-linecap:round;stroke-linejoin:round;vertical-align:-.16em}
+
+@media print{nav.toc{display:none}body{background:#fff;font-size:10.5pt}
+  section{break-inside:avoid}details:not([open]) .det-body{display:block}}
+
+/* ── 可及性與動作偏好（依 Web Interface Guidelines 補） ── */
+body{touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,.06)}
+h1,h2,h3{text-wrap:balance}
+table{font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:5px}
+.skip{position:absolute;left:-9999px;top:0;z-index:100;background:var(--accent);color:#fff;
+      padding:10px 16px;border-radius:0 0 8px 0;text-decoration:none;font-weight:700}
+.skip:focus{left:0}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body data-new-gr-c-s-check-loaded="14.1149.0" data-gr-ext-installed="">
+<a class="skip" href="https://nccu-pseudonymizer-report.vercel.app/#main">跳到主要內容</a>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="ic-alert" viewBox="0 0 24 24"><path d="M12 4.5l8.5 15h-17z"></path><path d="M12 10v4"></path><path d="M12 17.2v.1"></path></symbol>
+  <symbol id="ic-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M8.2 12.3l2.6 2.6 5-5.2"></path></symbol>
+  <symbol id="ic-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></symbol>
+  <symbol id="ic-up" viewBox="0 0 24 24"><path d="M12 19V5"></path><path d="M6 11l6-6 6 6"></path></symbol>
+  <symbol id="ic-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8.5 10V7.5a3.5 3.5 0 017 0V10"></path></symbol>
+  <symbol id="ic-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5z"></path><path d="M4 18.5h16"></path></symbol>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">國立政治大學研究發展處</p>
+    <h1>上傳前假名化工具<br>v2.4 → v2.6　檢測與改版全紀錄</h1>
+    <p class="lede">原版的引擎是對的，但有好幾條路徑會讓真名原封不動進入「可以上傳」的資料夾，而且畫面上看不出來。
+      這份紀錄說明：問題是什麼、改了什麼、為什麼這樣改、改完之後量出來的效果。</p>
+    <div class="meta">
+      <span>受測版本 v2.4_NCCUORD</span><span>改版後 v2.6</span><span>後續 v2.7</span>
+      <span>期間 2026-09-14 ～ 09-16</span><span>程式開發：Davy HSU</span>
+      <span>授權：MIT License</span><span>本頁不含任何真實個人資料</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="章節導覽">
+  <ul>
+    <li><a href="https://nccu-pseudonymizer-report.vercel.app/#summary" class="on">一頁摘要</a></li>
+    <li><a href="https://nccu-pseudonymizer-report.vercel.app/#three" class="">先說三件事</a></li>
+    <li><a href="https://nccu-pseudonymizer-report.vercel.app/#timeline" class="">歷程</a></li>
+    <li><a href="https://nccu-pseudonymizer-report.vercel.app/#principles" class="">四條原則</a></li>
+    <li><a href="https://nccu-pseudonymizer-report.vercel.app/#how" class="">怎麼驗證</a></li>
+    <li><a href="https://nccu-pseudonymizer-report.vercel.app/#numbers" class="">量化對照</a></li>
+    <li><a href="https://nccu-pseudonymizer-report.vercel.app/#issues" class="">17 條問題</a></li>
+    <li><a href="https://nccu-pseudonymizer-report.vercel.app/#changes" class="">126 條改動</a></li>
+    <li><a href="https://nccu-pseudonymizer-report.vercel.app/#limits" class="">仍做不到</a></li>
+    <li><a href="https://nccu-pseudonymizer-report.vercel.app/#effort" class="">工作量</a></li>
+    <li><a href="https://nccu-pseudonymizer-report.vercel.app/#v27" class="">後續 v2.7</a></li>
+    <li><a href="https://nccu-pseudonymizer-report.vercel.app/#deliver" class="">交付物</a></li>
+  </ul>
+</nav>
+
+<main class="wrap" id="main">
+
+<!-- ===== 摘要 ===== -->
+<section id="summary">
+  <h2><span class="n">◎</span>一頁摘要</h2>
+  <p class="sub">所有數字都是實際跑出來的，不是估算。</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">−96.3%</div><div class="k">隨機表格測試的真名殘留<br>409,897 → 15,176 處</div></div>
+    <div class="kpi"><div class="v">0 張</div><div class="k">13,000 張表格中<br>v2.6 殘留多於 v2.4 者</div></div>
+    <div class="kpi"><div class="v">31% → 93.4%</div><div class="k">姓名欄格子<br>被正確換成代碼的比率</div></div>
+    <div class="kpi"><div class="v">11,262 → 36</div><div class="k">畫面說「完成」<br>但其實還有殘留的張數</div></div>
+    <div class="kpi flat"><div class="v">17 / 17</div><div class="k">回報的問題<br>全部完成修正</div></div>
+    <div class="kpi flat"><div class="v">126 條</div><div class="k">改動條目<br>（8 章逐條附行號與實跑輸出）</div></div>
+    <div class="kpi flat"><div class="v">669 / 673</div><div class="k">回歸測試案例通過<br>未過的 4 項是已知限制</div></div>
+    <div class="kpi flat"><div class="v">約 45 萬次</div><div class="k">驗證期間引擎<br>實際執行次數</div></div>
+  </div>
+
+  <div class="note">
+    <p><strong>一句話版本：</strong>v2.6 沒有重寫引擎，而是補上「涵蓋範圍」與「失敗時說得出話」這兩件事——
+      並且用「新判定 ∪ 舊判定」的保底設計，確保任何一張表都不會比 v2.4 漏得更多。</p>
+  </div>
+</section>
+
+<!-- ===== 三件事 ===== -->
+<section id="three">
+  <h2><span class="n">0</span>先說三件事</h2>
+  <p class="sub">給原始程式作者的開場。</p>
+
+  <div class="good">
+    <div class="hd"><svg aria-hidden="true" class="i"><use href="#ic-check"></use></svg> 第一，引擎的核心是對的</div>
+    <p>鹽值用 <code translate="no">secrets.token_hex(16)</code>、代碼用 SHA-256、對照表累加、專案隔離、<code translate="no">--decode</code>、
+      <code translate="no">.xls→.xlsx</code>、重跑冪等——這些第一輪就逐項實測通過，<strong>v2.6 全部沿用，沒有重寫</strong>。
+      示範專案「4 檔／69 格／17 人」的數字，v2.6 跑出來和使用說明承諾的一模一樣。</p>
+  </div>
+
+  <div class="alert">
+    <div class="hd"><svg aria-hidden="true" class="i"><use href="#ic-alert"></use></svg> 第二，問題集中在兩件事，而且會互相放大</div>
+    <p><strong>1. 涵蓋範圍</strong>——有好幾條路徑會讓真名與個資原封不動進入 <code translate="no">output</code>，
+      而 <code translate="no">output</code> 是工具向使用者保證「可以上傳」的資料夾。</p>
+    <p style="margin-top:8px"><strong>2. 失敗時的訊息</strong>——真名沒被處理時，畫面顯示的是中性的灰字
+      （「原樣複製」「未偵測到姓名欄位」）甚至直接說「完成」。承辦同仁沒有任何線索可以察覺。</p>
+    <p style="margin-top:8px">單獨看，第 1 點是「漏做」；加上第 2 點就變成
+      <strong>「漏做而且沒有人會發現」</strong>。v2.6 的所有改動都可以歸到這兩條線上。</p>
+  </div>
+
+  <div class="card">
+    <div class="hd" style="color:var(--accent-ink)"><svg aria-hidden="true" class="i"><use href="#ic-lock"></use></svg> 第三，每一條都實跑過兩個版本</div>
+    <p>改版說明的每一條都附 <code translate="no">檔案:行號</code> 與實測輸出，可以自己重現。
+      <strong>我們沒有改動你那份 v2.4</strong>——全程唯讀，測試前後以 md5 確認未變。</p>
+  </div>
+</section>
+
+<!-- ===== 歷程 ===== -->
+<section id="timeline">
+  <h2><span class="n">1</span>整個過程是怎麼走的</h2>
+  <p class="sub">兩天、六個階段。每一次修改後都由互相隔離的代理人重新驗證，不採信自己的說法。</p>
+
+  <div class="timeline">
+    <div class="tl done">
+      <div class="when">09-14　第一階段</div>
+      <div class="what">實機安裝、照使用說明實際操作一次</div>
+      <p>先確認「正常情況是好的」，避免把工具本來就對的行為誤報成問題。引擎核心功能逐項實測通過。</p>
+    </div>
+    <div class="tl done">
+      <div class="when">09-14 ～ 09-15　第二階段</div>
+      <div class="what">六組獨立稽核 ＋ 對抗式複查</div>
+      <p>六組代理人各拿一份互相隔離的乾淨副本，自己設計測試、互不知道對方的發現；
+        另一組代理人的任務是「推翻」前者的每一條結論。只有被攻擊後仍站得住的，才寫進報告。</p>
+    </div>
+    <div class="tl done">
+      <div class="when">09-15　產出</div>
+      <div class="what">17 條問題回報單（P0 ／ P1 ／ P2 ／ P3）</div>
+      <p>依「會不會造成真名外洩」與「使用者能不能察覺」排序。其中 13 條的形狀完全一樣：
+        工具沒做到某件事，而畫面上沒有任何可以察覺的差別。</p>
+    </div>
+    <div class="tl done">
+      <div class="when">09-15　第三階段</div>
+      <div class="what">v2.5：第一次修正，獨立驗證未通過</div>
+      <p>修完之後由獨立代理人驗證，結果不通過——判定為不可交付，不對外釋出。
+        這一步保留下來的意義是：<strong>「改完了」不等於「改對了」，要有人去量。</strong></p>
+    </div>
+    <div class="tl done">
+      <div class="when">09-15 ～ 09-16　第四階段</div>
+      <div class="what">v2.6：五輪「修 → 獨立驗證 → 再修」</div>
+      <p>三次完整的獨立驗證，每個面向一位驗證員（自己寫產生器、自己做標註集，不准看主控端的量尺），
+        再配一位對抗式複查員。第三次驗證找出的每一條反例，都被做成可重複執行的回歸測試。
+        第五輪的每一段修改都寫成可重現的修補腳本（42 支）。</p>
+    </div>
+    <div class="tl done">
+      <div class="when">09-16 09:03　定版</div>
+      <div class="what">v2.6 通過驗收、打包交付</div>
+      <p>673 個回歸案例通過 669 個；13,000 張隨機表格的差異測試中，
+        v2.6 沒有任何一張的真名殘留多於 v2.4。四個未通過的案例是刻意保留的已知限制，已寫進使用說明。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 四條原則 ===== -->
+<section id="principles">
+  <h2><span class="n">2</span>改版時只守四條原則</h2>
+  <p class="sub">看到取捨就照這四條決定，不臨時發明標準。</p>
+
+  <div class="pr">
+    <div class="p1"><b>寧可少做，不要做錯</b>
+      <p>不確定的時候，換碼優於清空、提醒優於硬做。</p>
+      <p style="color:var(--faint)">例：判定不到表頭時，姓名欄照樣換碼（可用 mapping 還原），但不會整欄清空。</p></div>
+    <div class="p1"><b>沒處理好就不准說「完成」</b>
+      <p>任何異常都要讓視窗說「未完全成功」。</p>
+      <p style="color:var(--faint)">例：新增 <code translate="no">_problems()</code>，把引擎回傳的每一個異常統計欄位都轉成一句人話。</p></div>
+    <div class="p1"><b>不比舊版少做</b>
+      <p>新判定只能增加處理範圍，不能取代舊判定。</p>
+      <p style="color:var(--faint)">例：保留 v2.4 的「單一標題列、整欄處理到表尾」當<strong>保底判定</strong>，與新的多段判定取聯集。</p></div>
+    <div class="p1"><b>會毀資料的事先停下來</b>
+      <p>對照表／鹽值有疑慮時，寧可不處理。</p>
+      <p style="color:var(--faint)">例：鹽值和對照表對不上、<code translate="no">mapping.csv</code> 被存成 ANSI 而姓名變「?」時，一個檔都不處理。</p></div>
+  </div>
+
+  <div class="note">
+    <p><strong>第三條特別重要。</strong>v2.6 的表頭判定寫得比 v2.4 複雜很多，一旦判斷錯就可能比 v2.4 還糟。
+      所以每一格的最終判定是「新的多段判定 ∪ 舊的單列判定」——
+      13,000 張隨機表格的差異測試裡<strong>沒有任何一張的真名殘留多於 v2.4</strong>，就是靠這個保底。</p>
+  </div>
+</section>
+
+<!-- ===== 驗證方法 ===== -->
+<section id="how">
+  <h2><span class="n">3</span>我們怎麼確認「改對了」</h2>
+  <p class="sub">九類測試方式。設計重點是：不讓量尺被自己調整、不讓同一套思路重複犯同一個錯。</p>
+
+  <div class="methods">
+    <div class="m"><div class="mt"><i>1</i>實機安裝＋手動實跑</div>
+      <p>解壓原始 zip、照使用說明操作視窗與示範專案。</p>
+      <p class="why">先確認「正常情況是好的」，避免把工具本來就對的行為誤報成問題。</p></div>
+    <div class="m"><div class="mt"><i>2</i>獨立稽核代理人</div>
+      <p>6 組代理人各拿一份互相隔離的乾淨副本，自己設計測試。</p>
+      <p class="why">避免同一套思路的盲點；互不知道對方的發現。</p></div>
+    <div class="m"><div class="mt"><i>3</i>對抗式複查</div>
+      <p>另一組代理人的任務是「推翻」前者的每一條發現。</p>
+      <p class="why">只留下被攻擊後仍站得住的結論；反駁失敗才列入報告。</p></div>
+    <div class="m"><div class="mt"><i>4</i>差異模糊測試</div>
+      <p>程式隨機產生表格，同一張同時餵 v2.4 與 v2.6，逐格比對。</p>
+      <p class="why">用量取勝：人想不到的版型由機器窮舉；門檻是「v2.6 殘留不得多於 v2.4」。</p></div>
+    <div class="m"><div class="mt"><i>5</i>寫實版型測試</div>
+      <p>依研發處實際檔案型態手工設計 220 個案例（計畫清單、核銷清冊、簽到表、人事異動、表單匯出…）。</p>
+      <p class="why">模糊測試的隨機表格不等於真實表格，兩者互補。</p></div>
+    <div class="m"><div class="mt"><i>6</i>獨立標註集量測</div>
+      <p>先由未讀過程式的代理人標註 310 個欄名（檔案記錄「標註早於讀程式」），再量誤報率與漏報率。</p>
+      <p class="why">防止量尺被程式反向調整——標註集一旦拿來調程式就不再獨立。</p></div>
+    <div class="m"><div class="mt"><i>7</i>視窗實際驅動</div>
+      <p>用 <code translate="no">after()</code>＋<code translate="no">mainloop()</code> 真的跑 GUI，把對話框換成記錄器。</p>
+      <p class="why">視窗的錯誤（說「完成」、按鈕沒擋、搬移刪檔）只有真的跑才看得到。</p></div>
+    <div class="m"><div class="mt"><i>8</i>回歸測試套件</div>
+      <p>把每一條反例做成可重複執行的案例（673 案、7 個面向）。</p>
+      <p class="why">每修一批就全跑一次，確保沒有把修好的東西改壞。</p></div>
+    <div class="m"><div class="mt"><i>9</i>效能與保真度量測</div>
+      <p>14 個大檔案例，兩版交錯各跑 3 次取中位數；output 逐格比對。</p>
+      <p class="why">交錯執行才能排除機器負載差異；中位數避免單次抖動。</p></div>
+  </div>
+
+  <h3>留下來的測試資產</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>測試套件</th><th>內容</th><th class="num">現行版結果</th></tr></thead>
+      <tbody>
+        <tr><td>header_realistic</td><td>220 個寫實表格案例（研發處實際會出現的版型）</td><td class="num">220 / 220</td></tr>
+        <tr><td>review</td><td>124 個程式碼與文件宣稱的回歸案例</td><td class="num">124 / 124</td></tr>
+        <tr><td>regression_perf</td><td>149 個承諾與語料回歸案例（不含效能）</td><td class="num">149 / 149</td></tr>
+        <tr><td>gui</td><td>38 個視窗流程案例（實際驅動 GUI）</td><td class="num">38 / 38</td></tr>
+        <tr><td>header_fuzz</td><td>51 個表頭反例</td><td class="num">50 / 51</td></tr>
+        <tr><td>suspect_names</td><td>58 個疑似欄位案例＋310 欄獨立標註集量測</td><td class="num">57 / 58</td></tr>
+        <tr><td>integrity</td><td>33 個對照表／檔案安全案例</td><td class="num">31 / 33</td></tr>
+        <tr><td><strong>合計</strong></td><td>七個套件</td><td class="num"><strong>669 / 673</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="color:var(--muted)">4 個未通過是<strong>刻意保留、已寫進使用說明的限制</strong>，
+    作為「這是已知限制、不是迴歸」的標記（見<a href="https://nccu-pseudonymizer-report.vercel.app/#limits">第 7 節</a>）。</p>
+</section>
+
+<!-- ===== 量化對照 ===== -->
+<section id="numbers">
+  <h2><span class="n">4</span>量化對照</h2>
+  <p class="sub">四組量測。前兩組是「有沒有漏」，第三組是「認不得的時候會不會講」，第四組是代價。</p>
+
+  <h3>4.1　13,000 張隨機表格差異測試</h3>
+  <p>用三套結構不同的產生器（一般表格 6,000 張、壓力型 4,000 張、補充型 3,000 張），
+    同一張表同時餵給兩個版本，逐格比對。</p>
+
+  <div class="bars" id="bars1">
+    <div class="bar-row">
+      <div class="bar-label"><span>真名殘留處數</span><span class="delta up">−96.3%</span></div>
+      <div class="bar old"><span class="who">v2.4</span><span class="track"><span class="fill" data-w="100" style="width: 100%;"></span></span><span class="val">409,897</span></div>
+      <div class="bar new"><span class="who">v2.6</span><span class="track"><span class="fill" data-w="3.7" style="width: 3.7%;"></span></span><span class="val">15,176</span></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label"><span>個資殘留處數（電話、Email、證號…）</span><span class="delta up">−79.7%</span></div>
+      <div class="bar old"><span class="who">v2.4</span><span class="track"><span class="fill" data-w="100" style="width: 100%;"></span></span><span class="val">447,059</span></div>
+      <div class="bar new"><span class="who">v2.6</span><span class="track"><span class="fill" data-w="20.3" style="width: 20.3%;"></span></span><span class="val">90,800</span></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label"><span>姓名欄格子被換成代碼（標準答案 561,938 格）</span><span class="delta up">＋350,589 格</span></div>
+      <div class="bar old"><span class="who">v2.4</span><span class="track"><span class="fill" data-w="31" style="width: 31%;"></span></span><span class="val">31.0%</span></div>
+      <div class="bar new"><span class="who">v2.6</span><span class="track"><span class="fill" data-w="93.4" style="width: 93.4%;"></span></span><span class="val">93.4%</span></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label"><span>畫面顯示「完成」但其實有殘留的張數</span><span class="delta up">−99.7%</span></div>
+      <div class="bar old"><span class="who">v2.4</span><span class="track"><span class="fill" data-w="100" style="width: 100%;"></span></span><span class="val">11,262</span></div>
+      <div class="bar new"><span class="who">v2.6</span><span class="track"><span class="fill" data-w="0.4" style="width: 0.4%;"></span></span><span class="val">36</span></div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>指標</th><th class="num">v2.4</th><th class="num">v2.6</th><th class="num">變化</th></tr></thead>
+      <tbody>
+        <tr><td>姓名欄格子被換成代碼</td><td class="num">174,184（31.0%）</td><td class="num">524,773（93.4%）</td><td class="num up">＋350,589 格</td></tr>
+        <tr><td>真名殘留處數</td><td class="num">409,897</td><td class="num">15,176</td><td class="num up">−96.3%</td></tr>
+        <tr><td>個資殘留處數</td><td class="num">447,059</td><td class="num">90,800</td><td class="num up">−79.7%</td></tr>
+        <tr><td>有殘留的表格張數</td><td class="num">11,262（86.6%）</td><td class="num">3,402（26.2%）</td><td class="num up">−69.8%</td></tr>
+        <tr><td><strong>殘留多於對方的張數</strong></td><td class="num">—</td><td class="num"><strong>0</strong></td><td class="num">保底判定生效</td></tr>
+        <tr><td>畫面顯示「完成」的張數</td><td class="num">13,000</td><td class="num">1,623</td><td class="num">—</td></tr>
+        <tr><td>其中仍有殘留者（＝沒發現的外洩）</td><td class="num">11,262</td><td class="num"><strong>36</strong></td><td class="num up">−99.7%</td></tr>
+        <tr><td>非姓名格被改動（可用 mapping 還原）</td><td class="num">96,116</td><td class="num">107,970</td><td class="num down">＋12.3%</td></tr>
+        <tr><td>引擎中斷／少寫出檔案</td><td class="num">0</td><td class="num">0</td><td class="num">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="color:var(--muted)">最後幾列是代價：v2.6 為了不漏，會把一些非姓名格也換成代碼（例如保底判定把整欄處理到表尾時）。
+    這些格子都是<strong>換成代碼</strong>而不是清空，可以用 <code translate="no">mapping.csv</code> 還原；
+    在下一組的寫實案例上，這個數字反而比 v2.4 低。</p>
+
+  <h3>4.2　220 個寫實案例（143 個計入彙總）</h3>
+  <p>模仿研發處實際的檔案版型：計畫清單、核銷清冊、簽到表、人事異動、Google 表單匯出…</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>指標</th><th class="num">v2.4</th><th class="num">v2.6</th></tr></thead>
+      <tbody>
+        <tr><td>真名殘留處數</td><td class="num">450</td><td class="num"><strong>61</strong></td></tr>
+        <tr><td>個資殘留處數</td><td class="num">400</td><td class="num"><strong>34</strong></td></tr>
+        <tr><td>非姓名格被改動</td><td class="num">190</td><td class="num"><strong>135</strong></td></tr>
+        <tr><td>殘留多於 v2.4 的案例</td><td class="num">—</td><td class="num">0</td></tr>
+        <tr><td>有殘留卻顯示「完成」的案例</td><td class="num">—</td><td class="num">0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>4.3　疑似個資欄位警告（310 欄獨立標註集）</h3>
+  <p>標註集由不曾讀過程式的代理人先寫好（檔案裡記錄「標註時間早於讀程式」），再拿去量測，避免量尺被程式反向調整。</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>指標</th><th class="num">事前訂的門檻</th><th class="num">v2.6 實測</th></tr></thead>
+      <tbody>
+        <tr><td>誤報率（不該示警卻示警）</td><td class="num">≤ 15%</td><td class="num up">5.8%</td></tr>
+        <tr><td>漏報率（欄名單獨出現）</td><td class="num">≤ 20%</td><td class="num up">6.4%</td></tr>
+        <tr><td>漏報率（長題目式欄名，例如「請填寫您的聯絡電話」）</td><td class="num">≤ 20%</td><td class="num up">11.2%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="color:var(--muted)">v2.4 沒有這個功能（欄名不在清單裡就整欄跳過，畫面不提醒），所以沒有對照值。
+    門檻是<strong>量測之前</strong>就訂好的，事後沒有放寬。</p>
+
+  <h3>4.4　效能（14 個大檔案例，兩版交錯各跑 3 次取中位數）</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>案例</th><th class="num">v2.4</th><th class="num">v2.6</th><th class="num">倍率</th></tr></thead>
+      <tbody>
+        <tr><td>兩萬列三十欄</td><td class="num">15.11s</td><td class="num">15.30s</td><td class="num">1.01</td></tr>
+        <tr><td>一萬二千列</td><td class="num">2.29s</td><td class="num">2.49s</td><td class="num">1.09</td></tr>
+        <tr><td>100 個檔</td><td class="num">1.43s</td><td class="num">1.53s</td><td class="num">1.07</td></tr>
+        <tr><td>60 個中型檔</td><td class="num">29.74s</td><td class="num">33.39s</td><td class="num">1.12</td></tr>
+        <tr><td>一萬列純中文自由文字</td><td class="num">7.65s</td><td class="num">8.71s</td><td class="num">1.14</td></tr>
+        <tr><td>兩千個兩字姓名的對照表</td><td class="num">2.45s</td><td class="num">2.95s</td><td class="num">1.21</td></tr>
+        <tr><td>一萬列自由文字</td><td class="num">8.32s</td><td class="num">10.47s</td><td class="num">1.26</td></tr>
+        <tr><td>百檔大對照表</td><td class="num">1.84s</td><td class="num">2.31s</td><td class="num">1.26</td></tr>
+        <tr><td>「承辦人／○○老師」大量文字</td><td class="num">2.79s</td><td class="num">3.77s</td><td class="num">1.35</td></tr>
+        <tr><td>一格多人（同工作量對照）</td><td class="num">2.28s</td><td class="num">3.21s</td><td class="num">1.41</td></tr>
+        <tr><td>一格多人</td><td class="num">1.94s</td><td class="num">3.11s</td><td class="num down">1.60</td></tr>
+        <tr><td>英文全名（同工作量對照）</td><td class="num">1.76s</td><td class="num">2.92s</td><td class="num down">1.66</td></tr>
+        <tr><td>英文全名＋長英文備註</td><td class="num">1.61s</td><td class="num">2.89s</td><td class="num down">1.79</td></tr>
+        <tr><td><strong>200 張工作表</strong></td><td class="num">78.37s</td><td class="num">9.58s</td><td class="num up">0.12</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>11 個案例在 1.5 倍門檻內。超過的三個都是 v2.6 新增掃描的極端壓力形狀
+    （姓名欄每一格都寫 2–6 個人、每列 600 字英文備註且都提到名冊上的人），v2.4 完全不做這些掃描；
+    絕對差距約 1.2 秒，已寫進使用說明。</p>
+  <p>200 張工作表的案例反而快 8 倍——<strong>原因不是我們加速了</strong>，
+    而是 v2.4 每讀一張工作表就把整本活頁簿重新解析一次。</p>
+  <p style="color:var(--muted)">效能共做了六批優化，每一批都以 6 萬～12 萬筆隨機字串比對，驗證輸出結果與優化前完全相同才保留。</p>
+</section>
+
+<!-- ===== 17 條問題 ===== -->
+<section id="issues">
+  <h2><span class="n">5</span>當初回報的 17 條問題：現在怎麼樣了</h2>
+  <p class="sub">17 條全部完成修正。其中 13 條的形狀完全一樣：工具沒做到某件事，而畫面上沒有任何可以察覺的差別。</p>
+
+  <div class="note">
+    <p>所以 v2.6 除了逐條補涵蓋範圍，另外做了一件<strong>結構性</strong>的事：
+      引擎的訊息改用機器可判讀的前綴（<code translate="no">!!</code>＝失敗、<code translate="no">!</code>＝待確認），所有異常都進 <code translate="no">stats</code>，
+      再由新增的 <code translate="no">_problems()</code> 決定視窗要說「完成」還是「未完全成功」。</p>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>編號</th><th>問題（v2.4）</th><th>v2.6 的做法</th><th class="num">嚴重度</th></tr></thead>
+      <tbody>
+        <tr><td>P0-1</td><td>非 Excel 檔（.csv/.txt/.docx/.pdf）原樣複製進 <code translate="no">output</code>，只有一行灰字</td><td>完全不放進 <code translate="no">output</code>，結尾列清單並計入「未處理檔案」</td><td class="num"><span class="tag hi">高</span></td></tr>
+        <tr><td>P0-2</td><td>姓名欄名清單只有 7 個、須完全相符，漏掉的整欄真名靜默進 <code translate="no">output</code></td><td>清單擴為 66 個，加使用者可編輯的「欄位設定.txt」，整張表認不出姓名欄就發 <code translate="no">!</code> 提醒</td><td class="num"><span class="tag hi">高</span></td></tr>
+        <tr><td>P0-3</td><td>敏感欄名清單只有 8 個且大小寫敏感，<code translate="no">Email</code>、學號、生日全部漏掉</td><td>比對改為大小寫／全形／簡體不拘，清單擴為 51 個</td><td class="num"><span class="tag hi">高</span></td></tr>
+        <tr><td>P0-4</td><td>同一分頁上下兩段表格只認一列標題：第二段真名外洩、第一段欄位定義往下誤套</td><td>改為可辨識多個標題列，無法確定時照樣處理並印 <code translate="no">!</code> 要求人工確認</td><td class="num"><span class="tag hi">高</span></td></tr>
+        <tr><td>P0-5</td><td>訊息區直接印出「真實姓名→代碼」配對，而說明書教同仁截圖求助</td><td>畫面只印代碼，姓名寫進 <code translate="no">_private\name_warnings.csv</code></td><td class="num"><span class="tag hi">高</span></td></tr>
+        <tr><td>P1-1</td><td>代碼只有 6 個十六進位字元，數千人規模會撞號，且完全沒有偵測</td><td>改為 10 碼並加碰撞重算；mapping 裡既有的 6 碼代碼沿用不變</td><td class="num"><span class="tag hi">高</span></td></tr>
+        <tr><td>P1-2</td><td>同名的 <code translate="no">.xls</code> 與 <code translate="no">.xlsx</code> 寫到同一個輸出路徑，後者覆蓋前者且零警告</td><td>第二個自動改名另存，並用 <code translate="no">output_sources.csv</code> 記錄來源</td><td class="num"><span class="tag hi">高</span></td></tr>
+        <tr><td>P1-3</td><td><code translate="no">output</code> 檔被 Excel 開著時整批 crash，但視窗照樣印綠字「完成」</td><td>該檔計入失敗、其餘照常處理；視窗改印紅字「未完全成功」</td><td class="num"><span class="tag hi">高</span></td></tr>
+        <tr><td>P1-4</td><td><code translate="no">mapping.csv</code> 被鎖時，<code translate="no">output</code> 已經產生才 crash，代碼永遠查不回</td><td>開始前先試寫，寫不進去就整批不做；存檔改為原子置換</td><td class="num"><span class="tag hi">高</span></td></tr>
+        <tr><td>P2-1</td><td>存放位置檢查認不出「我的雲端硬碟」等預設掛載名，桌面／文件完全不檢查</td><td>補預設掛載名與 Windows 登記的同步根目錄，另加桌面／文件／下載／暫存的第二級提醒</td><td class="num"><span class="tag hi">高</span></td></tr>
+        <tr><td>P2-2</td><td>舊版資料搬進既有專案時 <code translate="no">rmtree</code> 掉該專案的 <code translate="no">_private</code>，螢幕還寫「代碼不受影響」</td><td>有衝突就擋下並要求改名，全程不 <code translate="no">rmtree</code>；搬移改用 <code translate="no">os.replace()</code></td><td class="num"><span class="tag hi">高</span></td></tr>
+        <tr><td>P2-3</td><td>執行期間切換專案或按「查詢姓名」，背景執行緒會把對照表寫進別的專案</td><td>執行期間擋掉所有會改變工作路徑的操作</td><td class="num"><span class="tag hi">高</span></td></tr>
+        <tr><td>P2-4</td><td>姓名整併視窗關閉後滑鼠滾輪的全域綁定沒解除，主視窗每滾一次噴一次 traceback</td><td>視窗銷毀時 <code translate="no">unbind_all</code></td><td class="num"><span class="tag mid">中</span></td></tr>
+        <tr><td>P3-1</td><td>檢視模式印出永遠是 0 的綠色統計，而且會建立 <code translate="no">salt.txt</code></td><td>改印「檢視完成：掃描 N 個檔案」，並且真的不寫出任何檔案</td><td class="num"><span class="tag mid">中</span></td></tr>
+        <tr><td>P3-2</td><td>專案名稱超過 60 字被截斷時不跳確認視窗，兩件業務會靜默併成同一個專案</td><td>截斷也算「名稱被調整」，撞名時另跳一個把調整後名稱攤開的確認視窗</td><td class="num"><span class="tag mid">中</span></td></tr>
+        <tr><td>P3-3</td><td>姓名整併時把舊代碼從 <code translate="no">mapping</code> 直接 <code translate="no">del</code>，已寄出的舊代碼永遠查不回</td><td>舊代碼移到 <code translate="no">retired_codes.csv</code>，<code translate="no">--decode</code> 仍查得回</td><td class="num"><span class="tag mid">中</span></td></tr>
+        <tr><td>P3-4</td><td>輸出被重導向到檔案或管線時，<code translate="no">▸</code>、<code translate="no">・</code> 兩個字元讓 cp950 崩潰</td><td>進入點統一把 stdout／stderr 轉成 UTF-8</td><td class="num"><span class="tag low">低</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <p style="margin:0"><strong>驗證方式：</strong>以上每一條都在沙箱對 v2.4 與 v2.6 各跑過一次獨立行程，
+      逐條附實測輸出。受測的 v2.4 全程唯讀，測試前後 md5 未變。</p>
+  </div>
+</section>
+
+<!-- ===== 126 條改動 ===== -->
+<section id="changes">
+  <h2><span class="n">6</span>126 條改動：分布與寫法</h2>
+  <p class="sub">改版說明文件共 8 章、126 條，每一條都是同樣的五段格式。</p>
+
+  <div class="card">
+    <p style="margin:0;font-weight:700;color:var(--accent-ink)">
+      原本（v2.4）　→　為什麼是問題　→　現在（v2.6）　→　為什麼這樣做　→　效果</p>
+    <p style="margin:.5em 0 0;color:var(--muted)">全部附 <code translate="no">檔案:行號</code> 與實跑輸出，可自行重現。</p>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>章</th><th>內容</th><th class="num">條數</th></tr></thead>
+      <tbody>
+        <tr><td>一</td><td>當初回報的 17 條問題：現在怎麼樣了</td><td class="num">17</td></tr>
+        <tr><td>二</td><td>表頭與表格版面判定（哪一欄是姓名欄）</td><td class="num">16</td></tr>
+        <tr><td>三</td><td>姓名欄以外的姓名（備註、工作表名、檔名、畫面）</td><td class="num">10</td></tr>
+        <tr><td>四</td><td>認不得的欄名：疑似個資警告與欄位設定.txt</td><td class="num">11</td></tr>
+        <tr><td>五</td><td>代碼、對照表與檔案安全</td><td class="num">17</td></tr>
+        <tr><td>六</td><td>視窗介面</td><td class="num">25</td></tr>
+        <tr><td>七</td><td>使用說明與畫面訊息</td><td class="num">17</td></tr>
+        <tr><td>八</td><td>效能、保真度與升級相容</td><td class="num">13</td></tr>
+        <tr><td><strong>合計</strong></td><td>八章</td><td class="num"><strong>126</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>程式規模的變化</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>檔案</th><th class="num">v2.4</th><th class="num">v2.6</th></tr></thead>
+      <tbody>
+        <tr><td><code translate="no">anonymize.py</code>（引擎）</td><td class="num">401 行 / 15,209 bytes</td><td class="num">3,062 行 / 150,977 bytes</td></tr>
+        <tr><td><code translate="no">anonymize_gui.py</code>（視窗）</td><td class="num">1,288 行 / 65,188 bytes</td><td class="num">1,739 行 / 91,032 bytes</td></tr>
+        <tr><td><code translate="no">使用說明.txt</code></td><td class="num">313 行</td><td class="num">576 行</td></tr>
+        <tr><td><code translate="no">欄位設定_範例.txt</code></td><td class="num">無</td><td class="num">新增</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <details>
+    <summary>這份改版說明本身是怎麼產生的？<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></svg></summary>
+    <div class="det-body">
+      <p>八個面向各由一位代理人整理改動、<strong>自己做 fixture 並實跑 v2.4 與 v2.6 對照</strong>，
+        再各由一位獨立稽核代理人逐條抽驗（自己重現 v2.4 的行為、現查行號、重算數字）。</p>
+      <p>稽核提出 <strong>48 條修正意見</strong>（多數是行號、數字或「把功勞歸錯」），全部已套用；
+        1 條主體成立但舉例講反的條目，已改用稽核提供的正確舉例。</p>
+      <p>撰稿規則只有兩條：<strong>沒有實跑過的不寫成事實；數字一律附來源。</strong></p>
+    </div>
+  </details>
+</section>
+
+<!-- ===== 仍做不到 ===== -->
+<section id="limits">
+  <h2><span class="n">7</span>v2.6 仍做不到的事</h2>
+  <p class="sub">這些是<strong>知道、但決定不修</strong>的項目。判斷的共同原則是「不要為了多做一點而引進不可逆的破壞」。</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>項目</th><th>現況</th><th>為什麼不修</th></tr></thead>
+      <tbody>
+        <tr><td>同一張表的第二段表格沒被認出來</td>
+            <td>第一段的姓名欄會一路往下套用到第二段（例如把「月支酬金」和金額換成代碼）；換到數字時畫面會提醒</td>
+            <td>要認出第二段就得放寬表頭判定，模糊測試顯示放寬後誤清空的格數會上升；換成代碼可以用 mapping 還原，清空不行</td></tr>
+        <tr><td>三字姓名夾在別的詞裡也會被換掉</td>
+            <td>姓名欄有「江大海」時，「長江大海的研究」會變成「長T-…的研究」</td>
+            <td>反過來只做整格比對，備註裡的「與江大海合作」就換不掉——那是外洩，比字被改掉嚴重</td></tr>
+        <tr><td>兩個字的姓名</td>
+            <td>句子裡不自動替換，只在前後文明確時提醒</td>
+            <td>兩字姓名與一般詞彙重疊率太高（田野、藍圖、連結），自動替換會大量誤傷</td></tr>
+        <tr><td>原始檔改名或換副檔名後重跑</td>
+            <td>舊檔名的 output 會留著，新舊兩份並存</td>
+            <td>工具無法分辨「這是舊版」和「這是先前批次的另一份檔」；自動刪除會毀掉別人的成果</td></tr>
+        <tr><td>直式表單、複雜合併儲存格</td>
+            <td>只提醒，不自動處理</td>
+            <td>這類表格的欄位語意必須由人判斷</td></tr>
+        <tr><td>「統一編號」這類機構層級欄位</td>
+            <td>單獨當欄名時會被整欄清空，而且不計入統計、視窗仍顯示「完成」</td>
+            <td>建議原作者一起決定要不要把清空欄再分成「個人」與「機構」兩類</td></tr>
+        <tr><td>效能</td>
+            <td>「姓名欄每格多人」與「每列長英文備註」兩種極端形狀約 1.6–1.8 倍</td>
+            <td>已做六批優化（每批都驗證結果不變），再壓要改架構；絕對差距約 1.2 秒</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <p>對應的回歸測試（673 案中的 4 個未通過案例）<strong>刻意保留為 FAIL</strong>，
+      作為「這是已知限制、不是迴歸」的標記。這些限制全部用白話寫在使用說明的「工具做不到的事」一節，給承辦同仁看。</p>
+  </div>
+</section>
+
+<!-- ===== 工作量 ===== -->
+<section id="effort">
+  <h2><span class="n">8</span>工作量：這件事實際花了多少</h2>
+  <p class="sub">統計來源是對話逐字稿與工作資料夾的實際產出檔案，不是估算。</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">約 45 萬次</div><div class="k">引擎實際執行次數</div></div>
+    <div class="kpi"><div class="v">211,360 張</div><div class="k">隨機表格測試案例<br>（每張同時餵兩個版本）</div></div>
+    <div class="kpi"><div class="v">108 個</div><div class="k">互相隔離的驗證代理人</div></div>
+    <div class="kpi"><div class="v">約 17 小時</div><div class="k">實際作業時間<br>（總跨度 43.3 小時）</div></div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>項目</th><th class="num">數量</th><th>說明</th></tr></thead>
+      <tbody>
+        <tr><td>差異模糊測試</td><td class="num">422,720 次</td><td>211,360 張隨機表格 × 2 個版本</td></tr>
+        <tr><td>獨立行程執行</td><td class="num">27,857 次</td><td>回歸套件、自我檢查、GUI 測試，每次留一份畫面訊息紀錄</td></tr>
+        <tr><td>回歸測試案例執行</td><td class="num">7,610 次</td><td>673 個案例的套件共執行 102 輪</td></tr>
+        <tr><td>產生／處理的 Excel 檔</td><td class="num">273,439 個</td><td>測試過程產生的實體檔案</td></tr>
+        <tr><td>可重現的修補腳本</td><td class="num">42 支</td><td>第五輪每一段改動都能重跑重現</td></tr>
+        <tr><td>工具呼叫</td><td class="num">7,509 次</td><td>兩個工作階段合計</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <details>
+    <summary>時間與資源消耗的細節<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></svg></summary>
+    <div class="det-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>項目</th><th class="num">v2.4 檢測</th><th class="num">v2.5／v2.6</th><th class="num">合計</th></tr></thead>
+          <tbody>
+            <tr><td>起訖（台灣時間）</td><td class="num">09-14 13:45<br>→ 09-15 10:18</td><td class="num">09-15 15:14<br>→ 09-16 09:03</td><td class="num">43.3 小時</td></tr>
+            <tr><td>實際作業</td><td class="num">約 2.2 小時</td><td class="num">約 14.8 小時</td><td class="num"><strong>約 17 小時</strong></td></tr>
+            <tr><td>中斷（等待、離開）</td><td class="num">18.4 小時</td><td class="num">4.2 小時</td><td class="num">—</td></tr>
+            <tr><td>代理人</td><td class="num">28 個</td><td class="num">80 個</td><td class="num">108 個</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="color:var(--muted)">「實際作業」＝把紀錄之間超過 10 分鐘的空檔視為中斷後的累計時間。
+        長時間的背景測試（例如 13,000 張模糊測試約 25 分鐘一輪）計入作業時間。</p>
+      <p style="color:var(--muted)">統計來源：兩個工作階段的完整逐字稿與 108 份代理人逐字稿，
+        以及工作資料夾裡的實際產出檔案（模糊測試逐行計數、回歸套件逐案計數、引擎執行紀錄檔計數、Excel 檔計數）。</p>
+    </div>
+  </details>
+</section>
+
+<!-- ===== v2.7 ===== -->
+<section id="v27">
+  <h2><span class="n">9</span>後續：v2.7 新增解除安裝功能</h2>
+  <p class="sub">v2.6 交付後補的一項功能。<b>引擎完全沒有改動</b>，所以這一節只說明新增了什麼、怎麼驗證的。</p>
+
+  <div class="note">
+    <p><strong>為什麼要加：</strong>原本移除這個工具只能自己刪資料夾，而
+      <code translate="no">_private\mapping.csv</code> 就在裡面——那是「代碼與真實姓名」的唯一一份對照表，
+      刪掉之後已經發出去的代碼永遠還原不回姓名、明年的年度作業也接不上。
+      交給使用者自己判斷「哪些檔案不能刪」，遲早會出事。</p>
+  </div>
+
+  <h3>改動範圍</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>檔案</th><th>動作</th><th>說明</th></tr></thead>
+      <tbody>
+        <tr><td><code translate="no">anonymize.py</code></td><td class="num"><span class="tag low">未變動</span></td>
+            <td>引擎一個位元組都沒改（md5 改版前後相同）</td></tr>
+        <tr><td><code translate="no">uninstall.py</code></td><td class="num"><span class="tag mid">新增</span></td>
+            <td>解除安裝的全部邏輯</td></tr>
+        <tr><td><code translate="no">9_解除安裝.bat</code></td><td class="num"><span class="tag mid">新增</span></td>
+            <td>只負責找 Python 並轉交；找不到就顯示手動移除步驟</td></tr>
+        <tr><td><code translate="no">LICENSE.txt</code></td><td class="num"><span class="tag mid">新增</span></td>
+            <td>MIT License，Copyright (c) 2026 Davy HSU</td></tr>
+        <tr><td><code translate="no">使用說明.txt</code></td><td class="num"><span class="tag mid">新增兩節</span></td>
+            <td>「不用了的時候：解除安裝」與「授權與開發者」；既有內容一行未改</td></tr>
+        <tr><td><code translate="no">anonymize_gui.py</code></td><td class="num"><span class="tag low">2 個字串</span></td>
+            <td>僅視窗標題與註解的版本號 v2.6 → v2.7，邏輯未動</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>為什麼用 Python 寫，不用批次檔</h3>
+  <p>三位代理人各寫了一版批次檔並進沙箱實測，結果是：備份位置輸入框可以被
+    <b>指令注入</b>（輸入含引號的字串，<code translate="no">&amp;</code> 之後的內容真的被 cmd 執行）；
+    最後的 <code translate="no">DELETE</code> 確認關卡只要輸入一個雙引號就會變成語法錯誤、整支批次檔中止；
+    <code translate="no">Get-FileHash</code> 在某些環境取不到時，雜湊比對會<b>靜默地拿兩個空字串相等</b>而判定「驗證通過」。</p>
+  <p>這些全是 cmd.exe 的引號與剖析陷阱，在 Python 裡不存在——而這個工具本來就需要 Python。
+    所以改成：批次檔只負責找 Python，其餘全部用 Python 寫，雜湊用 <code translate="no">hashlib</code>、
+    路徑用 <code translate="no">pathlib</code>、輸入不經過 shell。</p>
+
+  <h3>四項安全設計</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>設計</th><th>為什麼</th></tr></thead>
+      <tbody>
+        <tr><td>備份「整個工具資料夾」，不挑檔</td>
+            <td>確保<b>備份範圍必定涵蓋刪除範圍</b>。實測發現「只備份專案資料夾」的設計會漏掉
+              舊版（v1.x）留在工具根目錄的 <code translate="no">_private</code>，以及使用者自己放進去的檔案</td></tr>
+        <tr><td>逐檔比對 SHA-256，且 fail-closed</td>
+            <td>算不出來一律視為失敗，不讓「算不出來」長得像「一致」</td></tr>
+        <tr><td>完整移除要過四道關卡</td>
+            <td>確認 → 備份並驗證 → 刪除前再驗一次 → 手打 <code translate="no">DELETE</code> 再確認。
+              任何一關沒過一律什麼都不刪；直接按 Enter 永遠是取消</td></tr>
+        <tr><td>不自動移除 Python 與套件</td>
+            <td><code translate="no">pandas</code> 等套件這台電腦的其他程式可能也在用，只顯示指令由人決定</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>驗證</h3>
+  <div class="kpis">
+    <div class="kpi"><div class="v">20 / 20</div><div class="k">解除安裝的沙箱分支測試<br>全數通過</div></div>
+    <div class="kpi"><div class="v">673 案</div><div class="k">回歸測試對 v2.7 重跑<br>與 v2.6 逐案完全相同</div></div>
+    <div class="kpi flat"><div class="v">0</div><div class="k">引進的迴歸</div></div>
+    <div class="kpi flat"><div class="v">0</div><div class="k">未經同意就遺失<br>mapping.csv 的路徑</div></div>
+  </div>
+  <p>沙箱測試每個分支都真的執行一次並比對資料夾前後差異，包含：確認詞打錯、輸入一個雙引號、
+    備份位置指向工具資料夾內、<code translate="no">mapping.csv</code> 被其他程式獨佔、巢狀專案結構、
+    捷徑指向別的程式。交付前也從桌面壓縮檔解壓實跑一次，示範專案仍是 4 檔／69 格／17 人。</p>
+
+  <div class="caution">
+    <div class="hd"><svg aria-hidden="true" class="i"><use href="#ic-alert"></use></svg> 測試中自己抓到的兩個 bug</div>
+    <p>桌面捷徑的守門原本把 TargetPath 與 WorkingDirectory 合在一起比對，
+      導致一個指向別的程式、但工作目錄剛好在工具資料夾的捷徑<b>被誤刪</b>；已改成只認 TargetPath。
+      另外主控台輸出混進了 Markdown 星號，也一併修掉。</p>
+  </div>
+</section>
+
+<!-- ===== 交付物 ===== -->
+<section id="deliver">
+  <h2><span class="n">10</span>交付物與驗收</h2>
+  <p class="sub">交付內容、如何自行重跑驗證、相關文件。</p>
+
+  <h3>交付內容</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>檔案</th><th>位置</th><th class="num">sha256（前 16 碼）</th></tr></thead>
+      <tbody>
+        <tr><td><code translate="no">假名化工具_視窗版_v2.7_NCCUORD.zip</code></td><td>現行交付壓縮檔（15 個檔案）</td><td class="num"><code translate="no">a23f2953af202a19</code></td></tr>
+        <tr><td><code translate="no">anonymize.py</code></td><td>壓縮檔內 <code translate="no">假名化工具\\</code>　<b>引擎，v2.6 以來未變動</b></td><td class="num"><code translate="no">58f43059b67b9248</code></td></tr>
+        <tr><td><code translate="no">anonymize_gui.py</code></td><td>同上（v2.7 只改 2 個顯示用版本字串）</td><td class="num"><code translate="no">e7f2d3bce691fec3</code></td></tr>
+        <tr><td><code translate="no">使用說明.txt</code></td><td>同上（v2.7 新增兩節）</td><td class="num"><code translate="no">544df989f0afcc65</code></td></tr>
+        <tr><td><code translate="no">uninstall.py</code></td><td>同上　<span class="tag mid">v2.7 新增</span></td><td class="num"><code translate="no">3b100c592038f6b2</code></td></tr>
+        <tr><td><code translate="no">9_解除安裝.bat</code></td><td>同上　<span class="tag mid">v2.7 新增</span></td><td class="num"><code translate="no">77065d603038fe23</code></td></tr>
+        <tr><td><code translate="no">LICENSE.txt</code></td><td>同上　<span class="tag mid">v2.7 新增</span></td><td class="num"><code translate="no">eb4981bddf6b6199</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>v2.6 的產品資料夾與原始 v2.4 的唯讀參考版都完整保留，作為對照與證據。
+    交付前已從 v2.7 壓縮檔解壓重跑一次示範專案，確認結果與承諾一致
+    （4 檔／69 格／17 人），並確認解壓內容與產品資料夾逐檔相同。</p>
+  <p style="color:var(--muted)">上表的 <code translate="no">anonymize.py</code> 指紋與 v2.6 完全相同，
+    可以直接用來驗證「v2.7 沒有動到引擎」。</p>
+
+  <h3>可以自己重跑的驗證</h3>
+  <p>七個回歸套件、13,000 張差異測試、效能量測都保留成可重複執行的腳本，
+    <strong>不需要網路，也不會修改受測程式</strong>（每個測試都先把工具複製到自己的工作資料夾）。</p>
+
+  <h3>相關文件</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>文件</th><th>內容</th></tr></thead>
+      <tbody>
+        <tr><td>改版說明（本頁的完整版）</td><td>8 章 126 條，每條附 <code translate="no">檔案:行號</code> 與實跑輸出</td></tr>
+        <tr><td>問題回報單</td><td>2026-09-15 給原作者的 17 條問題</td></tr>
+        <tr><td>第二輪檢測報告</td><td>v2.4 的完整逐條證據</td></tr>
+        <tr><td>一鍵重現腳本</td><td>重現 v2.4 五個最嚴重問題</td></tr>
+        <tr><td>使用說明（v2.6）</td><td>給承辦同仁的操作說明，已改寫為網頁版</td></tr>
+        <tr><td>進度紀錄</td><td>五輪修正的過程、決策與每一批修補的原因</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <a class="totop" href="https://nccu-pseudonymizer-report.vercel.app/#summary"><svg aria-hidden="true" class="i"><use href="#ic-up"></use></svg> 回到最上面</a>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><strong>上傳前假名化工具　v2.4 → v2.6 檢測與改版全紀錄</strong>　｜　國立政治大學研究發展處</p>
+    <p>本頁為改版說明文件的摘要版；逐條證據（含行號與實跑輸出）以完整文件為準。</p>
+    <p>本頁所有姓名範例皆為虛構，不含任何真實個人資料。</p>
+    <p style="margin-top:.9em"><b>程式開發：Davy HSU</b>　｜　授權：MIT License　｜　Copyright (c) 2026 Davy HSU</p>
+  </div>
+</footer>
+
+<script>
+// 導覽高亮
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a')), map = {};
+  links.forEach(function(a){ var el = document.querySelector(a.getAttribute('href')); if(el) map[el.id]=a; });
+  var obs = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      var a = map[e.target.id]; if(!a || !e.isIntersecting) return;
+      links.forEach(function(x){x.classList.remove('on');});
+      a.classList.add('on');
+      var nav = a.parentNode.parentNode;
+      nav.scrollTo({left: a.offsetLeft - nav.clientWidth/2 + a.clientWidth/2, behavior:'smooth'});
+    });
+  }, {rootMargin:'-58px 0px -70% 0px', threshold:0});
+  Object.keys(map).forEach(function(id){ obs.observe(document.getElementById(id)); });
+})();
+
+// 長條圖：進入畫面才長出來
+(function(){
+  var fills = Array.prototype.slice.call(document.querySelectorAll('.bar .fill'));
+  if(!fills.length) return;
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(!e.isIntersecting) return;
+      e.target.style.width = e.target.getAttribute('data-w') + '%';
+      io.unobserve(e.target);
+    });
+  }, {threshold:.2});
+  fills.forEach(function(f){ f.style.width='0'; io.observe(f); });
+})();
+</script>
+
+
+</body><grammarly-desktop-integration data-grammarly-shadow-root="true" style="visibility: visible !important;"><template shadowrootmode="open"><style>
+      div.grammarly-desktop-integration {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select:none;
+        user-select:none;
+      }
+
+      div.grammarly-desktop-integration:before {
+        content: attr(data-content);
+      }
+    </style><div aria-label="grammarly-integration" role="group" tabindex="-1" class="grammarly-desktop-integration" data-content="{&quot;mode&quot;:&quot;limited&quot;,&quot;isActive&quot;:false,&quot;isUserDisabled&quot;:false}"></div></template></grammarly-desktop-integration></html>

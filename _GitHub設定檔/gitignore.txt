@@ -1,0 +1,46 @@
+# ==================================================================
+#  最重要的一件事
+#  這個工具產生的 _private 資料夾含「代碼 ↔ 真實姓名」對照表。
+#  一旦被 commit 上去，就等於把個資推上公開網路，而且 git 會永久留存。
+#  以下規則確保它永遠不會進版控——請不要為了任何理由放寬。
+# ==================================================================
+
+# 對照表、鹽值與各種衍生紀錄（不論在哪一層）
+_private/
+salt.txt
+mapping.csv
+aliases.csv
+name_warnings.csv
+retired_codes.csv
+output_sources.csv
+
+# 假名化後的產出（每個人跑出來的都不同，不需要進版控）
+output/
+
+# 使用者自己的專案：只保留示範專案的輸入檔
+專案/*/input/*
+!專案/示範專案/input/*
+
+# 工具執行時產生的狀態檔
+last_project.txt
+欄位設定.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 打包產物
+build/
+dist/
+*.spec
+*.zip
+
+# 作業系統與 Office 暫存
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*
+*.tmp

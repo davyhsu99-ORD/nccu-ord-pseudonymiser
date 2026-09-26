@@ -1,0 +1,76 @@
+# 每次 push 或 PR 都跑一次示範專案，確認輸出仍是 4 檔／69 格／17 人。
+# 這不是完整的回歸測試，而是一道「引擎還活著」的最低門檻。
+name: demo-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安裝相依套件
+        run: pip install pandas openpyxl xlrd
+
+      - name: 上傳前安全檢查
+        run: python scripts/check_before_push.py
+
+      - name: 執行示範專案並驗證數字
+        run: |
+          python - <<'PY'
+          import sys, io, contextlib, shutil, re
+          from pathlib import Path
+          sys.path.insert(0, ".")
+          import anonymize as az
+
+          P = Path("專案/示範專案")
+          shutil.rmtree(P / "output", ignore_errors=True)
+          shutil.rmtree(P / "_private", ignore_errors=True)
+          az.set_workdir(P)
+
+          buf = io.StringIO()
+          with contextlib.redirect_stdout(buf):
+              az.main([])
+          out = buf.getvalue()
+          print(out)
+
+          def grab(label):
+              m = re.search(label + r"\D*(\d+)", out)
+              return int(m.group(1)) if m else None
+
+          got = (grab("處理檔案"), grab("替換儲存格"), grab("本次新增姓名"))
+          want = (4, 69, 17)
+          assert got == want, f"示範專案輸出不符：得到 {got}，應為 {want}"
+          assert "疑似同一人" in out, "姓名寫法異常的提醒沒有出現"
+          print("示範專案驗證通過：4 檔／69 格／17 人")
+          PY
+
+      - name: 確認重跑結果相同（冪等）
+        run: |
+          python - <<'PY'
+          import sys, io, contextlib
+          from pathlib import Path
+          sys.path.insert(0, ".")
+          import anonymize as az
+          P = Path("專案/示範專案")
+          az.set_workdir(P)
+          before = dict(az.load_mapping())
+          with contextlib.redirect_stdout(io.StringIO()):
+              az.main([])
+          assert dict(az.load_mapping()) == before, "重跑後代碼改變了，不具冪等性"
+          print("冪等性驗證通過")
+          PY
+
+      - name: 確認測試產生的對照表沒有被留下
+        run: |
+          rm -rf 專案/示範專案/output 專案/示範專案/_private
+          test -z "$(git status --porcelain)" || (git status --porcelain && exit 1)
