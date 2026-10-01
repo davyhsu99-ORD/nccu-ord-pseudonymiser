@@ -821,6 +821,13 @@ def _strip_person_decor(s: str) -> str:
     return t
 
 
+def _variant_key(name: str) -> str:
+    """「疑似同一人」的比對鍵：去掉空白、括號註記與結尾稱謂（「陳 小明」「陳小明 教授」「陳小明(召集人)」→ 陳小明）。
+    去掉後不到兩個字（「林教授」）就只去空白，避免把不同的人湊成一組。"""
+    core = re.sub(r"\s", "", _strip_person_decor(name))
+    return core if len(core) >= 2 else re.sub(r"\s", "", name)
+
+
 _GROUP_TAILS = ("研究室", "實驗室", "團隊")
 
 
@@ -1729,6 +1736,10 @@ def _substring_safe(core: str) -> bool:
 
 _SHORT_BEFORE = frozenset("由與和跟請給向交經陪找及同讓被派邀")
 _SHORT_AFTER = _MENTION_VERBS + _MENTION_AFTER
+# 「由吳宗翰彙整」「請王大華負責」：中間是沒出現在姓名欄的三、四字人名。只提醒，不替換
+_UNKNOWN_BY_RE = re.compile(f"[{''.join(sorted(_SHORT_BEFORE))}]([{_CJK_CLASS}]{{3,4}}?)"
+                            f"(?:{'|'.join(v for v in _MENTION_VERBS if len(v) >= 2)})")
+_UNKNOWN_BY_ORG_TAILS = tuple("司署隊團班社廳府")   # 「由高教司審核」是機關，不是人
 
 
 class KnownNames:
@@ -2000,7 +2011,10 @@ def process_sheet(df: pd.DataFrame, salt: str, mapping: dict, rev: dict, stats: 
             if only_name and role != "name":
                 continue
             (name_any if role == "name" else drop_any)[start:stop, ci] = True
-            touched.append((norm_header(labels.get(ci, ""))[:20], "假名化" if role == "name" else "清空"))
+            lab = str(labels.get(ci, ""))
+            # 英文欄名照原文顯示（「Principal Investigator」不要變成「PrincipalInvestigato」）
+            shown = " ".join(lab.split())[:40] if lab.isascii() else norm_header(lab)[:20]
+            touched.append((shown, "假名化" if role == "name" else "清空"))
             if norm_key(labels.get(ci, "")) in CONFIG_ADDED:
                 CONFIG_USED.add(norm_key(labels.get(ci, "")))
 
@@ -2242,16 +2256,29 @@ def process_sheet(df: pd.DataFrame, salt: str, mapping: dict, rev: dict, stats: 
                 # 左邊緊鄰姓名欄名的格子多半是「姓名｜伏家生」的值，只印欄位位置
                 left = roles.get(ci - 1)
                 info["suspects"].append(f"第 {_col_letter(ci)} 欄" if left == "name" else lab)
+        # 欄名不在清單、也不像人員欄名，內容卻多半是姓名（「補助對象」、沒有欄名的欄）：一樣提醒。
+        # 只提醒不處理；「名稱／備註／系所」這類欄名不算，抽查前 500 列即可。
+        # 兩字值為主又大量重複的是分類欄（「高教」「林業」）；三字以上的姓名重複出現（排班、經手）仍算
+        for ci in range(m):
+            lab = labels.get(ci)
+            if ci in roles or (lab is not None and (suspect_label(lab) or _HEADERISH_WORDS_RE.search(norm_key(lab)))):
+                continue
+            vals = [v for v in df.iloc[start:min(stop, start + 500), ci] if isinstance(v, str) and v.strip()]
+            hits = [v for v in vals if looks_like_person(v)]
+            longish = sum(len(re.sub(r"\s", "", v)) >= 3 for v in hits) * 2 >= len(hits)
+            if len(hits) >= 2 and len(hits) * 10 >= len(vals) * 6 and (longish or len(set(hits)) * 2 >= len(hits)):
+                info["suspects"].append(f"第 {_col_letter(ci)} 欄")   # 可疑的是內容不是欄名，印位置才找得到
 
     info["suspects"] = list(dict.fromkeys(info["suspects"]))
     return df, info
 
 
 def scan_known_names(df: pd.DataFrame, done: np.ndarray, known: KnownNames, dry: bool):
-    """姓名欄以外的格子若出現已知姓名，換成代碼。回傳 ({欄索引: 處數}, 兩字姓名提醒數)。"""
-    hits, short = {}, 0
+    """姓名欄以外的格子若出現已知姓名，換成代碼。
+    回傳 ({欄索引: 處數}, 兩字姓名提醒數, 「由○○○彙整」這類疑似陌生姓名的提醒數)。"""
+    hits, short, unknown = {}, 0, 0
     if not known:
-        return hits, short
+        return hits, short, unknown
     arr = df.to_numpy(dtype=object)
     todo = ~done
     # 同一欄有兩格以上、而且三成以上的格子「整格就是已知姓名」：多半是沒認出來的姓名欄，
@@ -2284,7 +2311,10 @@ def scan_known_names(df: pd.DataFrame, done: np.ndarray, known: KnownNames, dry:
             if not dry:
                 df.iat[ri, ci] = new
         short += known.short_mentions(new)
-    return hits, short
+        # new 裡的已知姓名已經換成代碼（檢視模式也是），剩下的才是陌生姓名
+        unknown += sum(1 for mo in _UNKNOWN_BY_RE.finditer(new)
+                       if _cjk_person(mo.group(1)) and not mo.group(1).endswith(_UNKNOWN_BY_ORG_TAILS))
+    return hits, short, unknown
 
 
 _ILLEGAL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
@@ -2448,11 +2478,12 @@ def _has_person_cell(df) -> bool:
 def finish_excel(entry, known, stats, dry, used_outputs, sources, planned):
     """第二階段：掃描姓名欄以外的已知姓名、改工作表名與檔名、印結果、寫檔。"""
     rel, sheet_names, sheets, infos = entry["rel"], entry["sheet_names"], entry["sheets"], entry["infos"]
-    elsewhere, short = [], 0
+    elsewhere, short, unknown = [], 0, 0
     for sh in sheet_names:
-        h, s = scan_known_names(sheets[sh], infos[sh]["done"], known, dry)
+        h, s, u = scan_known_names(sheets[sh], infos[sh]["done"], known, dry)
         elsewhere += [(sh, ci, cnt) for ci, cnt in sorted(h.items())]
         short += s
+        unknown += u
 
     used_sheet, out_names, renamed_sheets, person_sheets = set(), {}, 0, 0
     for idx, sh in enumerate(sheet_names):
@@ -2463,8 +2494,12 @@ def finish_excel(entry, known, stats, dry, used_outputs, sources, planned):
             new = f"工作表{idx + 1}"
             person_sheets += 1
         out_names[sh] = _sheet_out_name(new, used_sheet)
-    # 畫面上的工作表名一律再遮蔽一次（output 只改確定的人名，畫面寧可多遮）
-    disp = {sh: mask_text(out_names[sh], known) for sh in sheet_names}
+    # 畫面上的工作表名一律再遮蔽一次（output 只改確定的人名，畫面寧可多遮）；
+    # 遮掉的加註第幾張，同仁才對得出是哪一張表（「紀錄」這種一般詞也可能被遮）
+    disp = {}
+    for idx, sh in enumerate(sheet_names):
+        d = mask_text(out_names[sh], known)
+        disp[sh] = d if d == out_names[sh] else f"{d}（第 {idx + 1} 張工作表）"
 
     touched_any = False
     for sh in sheet_names:
@@ -2553,7 +2588,12 @@ def finish_excel(entry, known, stats, dry, used_outputs, sources, planned):
         print(f"  ! 句子裡有 {short} 處出現兩個字的已知姓名，工具沒有自動替換（避免誤傷一般詞彙），請人工確認。")
         stats["short_name_mentions"] += short
         problem = True
-    if unsure or short:
+    if unknown:
+        print(f"  ! 文字裡有 {unknown} 處「由○○○彙整」「請○○○負責」這類寫法，○○○ 看起來像人名但沒有出現在姓名欄，"
+              "工具沒有換，請人工確認。")
+        stats["short_name_mentions"] += unknown
+        problem = True
+    if unsure or short or unknown:
         stats["short_name_files"] += 1
 
     label_cols = [(sh, ci) for sh in sheet_names for ci in infos[sh]["label_cols"]]
@@ -2986,13 +3026,13 @@ def main(argv=None):
     # ---- 姓名寫法異常偵測（畫面只顯示代碼，姓名寫進檔案）----
     groups = {}
     for code, name in mapping.items():
-        groups.setdefault(re.sub(r"\s", "", name), []).append((code, name))
+        groups.setdefault(_variant_key(name), []).append((code, name))
     dups = {k: v for k, v in groups.items() if len(v) > 1}
     stats["name_dups"] = len(dups)
     warn_file = PRIV_DIR / "name_warnings.csv"
     if dups:
         print("\n" + "!" * 66)
-        print(f"注意：偵測到 {len(dups)} 組疑似同一人的不同寫法（空白差異）")
+        print(f"注意：偵測到 {len(dups)} 組疑似同一人的不同寫法（空白、稱謂或括號註記不同）")
         print("這會造成跨檔比對對不起來，建議請資料提供單位在來源端統一：")
         for k, v in list(dups.items())[:10]:
             print("  ・" + "　｜　".join(c for c, n in v))

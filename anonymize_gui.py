@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 ====================================================================
- 政大研發處　上傳前假名化工具　視窗介面  anonymize_gui.py  v2.9
+ 政大研發處　上傳前假名化工具　視窗介面  anonymize_gui.py  v3.0
 ====================================================================
 
 用途
@@ -541,7 +541,7 @@ class App:
         self._private_warned = False   # _private 外流警告本次只跳一次
         self._migration_broken = False  # 啟動時搬移舊資料失敗（salt 沒搬過去）→ 不准執行
 
-        root.title("上傳前假名化工具　v2.9　政大研發處")
+        root.title("上傳前假名化工具　v3.0　政大研發處")
         root.configure(bg=BG)
         try:                                  # 視窗與工作列圖示（Windows）
             if ICON_FILE.exists():
@@ -1312,7 +1312,7 @@ class App:
         tk.Label(win, text="姓名整併", font=FONT_H, bg=BG, fg=INK
                  ).pack(anchor="w", padx=16, pady=(14, 2))
         tk.Label(win,
-                 text="同一個人被打成兩種寫法（多空格、錯字）時，會拿到兩個代碼。"
+                 text="同一個人被打成兩種寫法（多空格、多了稱謂或括號註記、錯字）時，會拿到兩個代碼。"
                       "在這裡指定哪些是同一人，整併後他們會共用同一個代碼。",
                  font=FONT, bg=BG, fg=MUTED, wraplength=w - 60, justify="left"
                  ).pack(anchor="w", padx=16)
@@ -1370,7 +1370,8 @@ class App:
             tk.Label(fa,
                      text="請在每一組中，點選「要保留的正確寫法」；"
                           "其餘寫法會併到它身上。\n"
-                          "提示：中文姓名通常不含空格；英文姓名通常「要」空格。"
+                          "提示：中文姓名通常不含空格；英文姓名通常「要」空格；"
+                          "帶稱謂或括號註記的（「王小明 教授」「王小明(召集人)」）通常保留本名。"
                           "不確定的就選「先不處理」。",
                      font=FONT, bg=BG, fg=MUTED, justify="left",
                      wraplength=w - 90).pack(anchor="w", padx=12, pady=(8, 4))
@@ -1665,7 +1666,7 @@ class App:
             if messagebox.askyesno(
                     "偵測到疑似同一人",
                     "有幾組姓名寫法不同、但很可能是同一個人\n"
-                    "（例如多了空格）。\n\n"
+                    "（例如多了空格、稱謂或括號註記）。\n\n"
                     "這會讓同一個人拿到兩個代碼，跨檔比對就對不起來。\n\n"
                     "要現在開啟「姓名整併」，指定哪些是同一人嗎？"):
                 self.merge_names()

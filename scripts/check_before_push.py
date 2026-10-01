@@ -47,7 +47,7 @@ TEXT_EXT = {".py", ".txt", ".md", ".csv", ".bat", ".json", ".yml", ".yaml"}
 def tracked_files():
     try:
         out = subprocess.run(["git", "-c", "core.quotepath=false", "ls-files"], cwd=ROOT,
-                             capture_output=True, text=True, check=True)
+                             capture_output=True, text=True, encoding="utf-8", check=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
         return None
     return [p for p in out.stdout.splitlines() if p.strip()]
@@ -60,11 +60,28 @@ def drop_ignored(paths):
     try:
         out = subprocess.run(["git", "-c", "core.quotepath=false",
                                 "check-ignore", "--stdin"], cwd=ROOT,
-                             input="\n".join(paths), capture_output=True, text=True)
+                             input="\n".join(paths), capture_output=True, text=True, encoding="utf-8")
     except FileNotFoundError:
         return paths
     ignored = set(out.stdout.splitlines())
     return [p for p in paths if p not in ignored]
+
+
+def check_bat_cjk_adjacency():
+    """.bat 裡相鄰兩行都含中文時，cmd 在真實主控台會把後一行從行中間開始讀，
+    那一行說明就不見了，換成一行 is not recognized 錯誤。中間空一行即可避免。
+    （行尾是 ^ 的續行不能插空行，會把指令切斷，所以跳過。）"""
+    bad = []
+    for p in sorted(ROOT.rglob("*.bat")):
+        try:
+            lines = p.read_bytes().decode("utf-8").split("\r\n")
+        except UnicodeDecodeError:
+            continue
+        for i in range(len(lines) - 1):
+            a, b = lines[i], lines[i + 1]
+            if not a.isascii() and not b.isascii() and not a.rstrip().endswith("^"):
+                bad.append(f"{p.relative_to(ROOT)}:{i + 1}")
+    return bad
 
 
 def main():
@@ -108,6 +125,8 @@ def main():
                 if hits:
                     notes.append(f"[{label}] {rel}　例：{str(hits[0])[:24]}")
 
+    bat_bad = check_bat_cjk_adjacency()
+
     print("=" * 62)
     if problems:
         print(f"不通過：{len(problems)} 項必須處理\n")
@@ -122,6 +141,11 @@ def main():
         return 1
 
     print("通過：沒有發現對照表、鹽值或非示範的原始檔。")
+    if bat_bad:
+        print(f"\n另有 {len(bat_bad)} 處 .bat 相鄰兩行都含中文，"
+              "在真實主控台會吃掉一行說明；中間請空一行：")
+        for s2 in bat_bad[:20]:
+            print("  ·", s2)
     if notes:
         print(f"\n另有 {len(notes)} 項需要你自己看一眼（不一定是問題）：")
         for s in notes[:20]:

@@ -5,7 +5,7 @@
 Replaces personal names in Excel rosters with stable codes, so the file can be
 handed to an external AI service. **The lookup table never leaves your computer.**
 
-![version](https://img.shields.io/badge/version-v2.9-0f766e)
+![version](https://img.shields.io/badge/version-v3.0-0f766e)
 ![licence](https://img.shields.io/badge/license-MIT-blue)
 ![platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![python](https://img.shields.io/badge/python-3.9%2B-3776ab)
@@ -60,7 +60,10 @@ English rosters, rely on the column lists and always use *① Preview* first.
 ## Install
 
 **Windows, no Python required knowledge:** download the zip from
-[Releases](../../releases), move the folder to a local drive (not OneDrive,
+[Releases](../../releases). **Before extracting it**, right-click the zip →
+**Properties** → tick **Unblock** → **OK** (Windows 11 Smart App Control blocks
+unsigned `.bat` files downloaded from the internet, with no "run anyway" option).
+Extract it, move the folder to a local drive (not OneDrive,
 Dropbox or any sync folder — the tool checks and warns), then double-click
 `1_第一次執行_安裝環境.bat`. It installs Python and dependencies and creates a
 desktop shortcut.

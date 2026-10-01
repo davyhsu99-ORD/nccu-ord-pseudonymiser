@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 ====================================================================
- 政大研發處　上傳前假名化工具　解除安裝  uninstall.py  v2.9
+ 政大研發處　上傳前假名化工具　解除安裝  uninstall.py  v3.0
 ====================================================================
 
 設計原則（要改這支程式之前請先看完）
@@ -41,7 +41,7 @@ SIGNATURE = ("anonymize.py", "anonymize_gui.py", "2_啟動假名化工具.bat")
 # ── 屬於「程式」的檔案：選項 3 只刪這些，使用者資料一概不動 ──
 PROGRAM_FILES = (
     "anonymize.py", "anonymize_gui.py", "requirements.txt", "使用說明.txt",
-    "假名化工具.ico", "欄位設定_範例.txt", "LICENSE.txt",
+    "假名化工具.ico", "欄位設定_範例.txt", "field_settings_example_EN.txt", "LICENSE.txt",
     "1_第一次執行_安裝環境.bat", "2_啟動假名化工具.bat", "9_解除安裝.bat",
     "uninstall.py", "last_project.txt",
 )
@@ -125,6 +125,9 @@ def refuse_if_dangerous_location():
         home = Path.home().resolve()
         for extra in ("Desktop", "Documents", "桌面", "文件"):
             names[home / extra] = extra
+        # 開了 OneDrive 資料夾備份時，真正的桌面／文件在 OneDrive 底下，以登錄檔記錄的位置為準
+        names.setdefault(desktop_dir().resolve(), "桌面")
+        names.setdefault(documents_dir().resolve(), "文件")
         names[home] = "使用者家目錄"
         bad = names.get(p)
     if bad:
@@ -250,8 +253,9 @@ def is_inside(child: Path, parent: Path):
 
 def choose_backup_dir():
     """問備份位置。回傳 Path 或 None（放棄）。"""
-    default = Path.home() / "Desktop" / (
-        "假名化工具_備份_" + datetime.now().strftime("%Y%m%d_%H%M%S"))
+    # 預設放在工具資料夾旁邊（第零步要求的本機硬碟）。家目錄\Desktop 在 OneDrive 資料夾備份下
+    # 不是真正的桌面（看不到、使用者找不回），真正的桌面又會同步上雲，都不適合放含真實姓名的備份
+    default = ROOT.parent / ("假名化工具_備份_" + datetime.now().strftime("%Y%m%d_%H%M%S"))
     say("　請問要把備份放在哪裡？")
     say("　　直接按 Enter＝用預設位置：")
     say("　　" + str(default))
@@ -399,6 +403,16 @@ def desktop_dir():
         return Path.home() / "Desktop"
 
 
+def documents_dir():
+    try:
+        import winreg
+        key = r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key) as k:
+            return Path(winreg.QueryValueEx(k, "Personal")[0])
+    except Exception:
+        return Path.home() / "Documents"
+
+
 def shortcut_target(lnk: Path):
     """讀 .lnk 指向哪裡。讀不到回 None。"""
     try:
@@ -464,10 +478,15 @@ def remove_program_files():
 
 
 CLEANUP = r'''# -*- coding: utf-8 -*-
-"""解除安裝的收尾程式：等主程式結束後刪掉整個工具資料夾，然後刪掉自己。"""
+"""解除安裝的收尾程式：先刪掉自己，再等主程式結束後刪掉整個工具資料夾。"""
 import shutil, sys, time
 from pathlib import Path
 
+# 程式已經讀進記憶體，現在就能刪掉這個檔；放到最後的話，使用者直接按 X 關視窗就會留在暫存資料夾
+try:
+    Path(__file__).unlink()
+except Exception:
+    pass
 target = Path(sys.argv[1])
 backup = sys.argv[2] if len(sys.argv) > 2 else ""
 print("正在移除：" + str(target))
@@ -495,10 +514,6 @@ print("=" * 66)
 print()
 try:
     input("按 Enter 關閉這個視窗…")
-except Exception:
-    pass
-try:
-    Path(__file__).unlink()
 except Exception:
     pass
 '''

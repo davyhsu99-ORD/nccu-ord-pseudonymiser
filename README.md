@@ -13,7 +13,7 @@
 
 適合行政與校務分析人員：不必會寫程式、不必開命令提示字元，點兩下就能用。
 
-![版本](https://img.shields.io/badge/version-v2.9-0f766e)
+![版本](https://img.shields.io/badge/version-v3.0-0f766e)
 ![授權](https://img.shields.io/badge/license-MIT-blue)
 ![平台](https://img.shields.io/badge/platform-Windows-lightgrey)
 ![Python](https://img.shields.io/badge/python-3.9%2B-3776ab)
@@ -43,7 +43,9 @@
 
 ### 給不熟電腦的同仁（建議路徑）
 
-1. 按 [Releases](../../releases) 下載最新的 zip，解壓縮
+1. 按 [Releases](../../releases) 下載最新的 zip。**解壓縮前**先在 zip 上按右鍵 →「內容」→
+   勾選「解除封鎖」→「確定」，再解壓縮（Windows 11 的「智慧型應用程式控制」
+   會擋下從網路下載、沒有簽章的 `.bat`，而且沒有「仍要執行」可以按）
 2. 把整個資料夾**移到本機硬碟**，例如 `D:\假名化作業\`
    （不要放在 OneDrive、Dropbox、Google 雲端硬碟等會自動同步的位置——
    工具會自己檢查，位置不對會跳警告）
